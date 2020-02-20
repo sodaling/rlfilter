@@ -48,7 +48,7 @@ func (t *TokenBucket) limit() bool {
 	rate := atomic.LoadUint64(&t.rate)
 	current := atomic.AddUint64(&t.allowance, rate*passed)
 	if max := atomic.LoadUint64(&t.max); current > max {
-		atomic.SwapUint64(&t.allowance, max)
+		atomic.AddUint64(&t.allowance, max-current)
 		current = max
 	}
 
@@ -71,6 +71,6 @@ func unixNano() uint64 {
 func (t *TokenBucket) Undo() {
 	current := atomic.AddUint64(&t.allowance, t.unit)
 	if max := atomic.LoadUint64(&t.max); current > max {
-		atomic.StoreUint64(&t.allowance, max)
+		atomic.AddUint64(&t.allowance, max-current)
 	}
 }
